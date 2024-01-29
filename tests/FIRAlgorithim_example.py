@@ -1,4 +1,4 @@
-import FIRAlgorithim as FIR
+from ..src.algorithim import FIRAlgorithim as FIR
 
 #Let A be the coeffents of the desired transfer function
 A = [-0.250,0.500,-0.250]
