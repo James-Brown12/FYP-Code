@@ -137,7 +137,7 @@ if __name__ == "__main__":
     c = 299792458
     DELTAL = c / FSR / NG
     # Example usage
-    phi_values = [1.0, 0.0, 1.0, 0.0]  # Replace with your desired value for phi
+    phi_values = [np.pi*1.0, 0.0, np.pi*1.0, 0.0]  # Replace with your desired value for phi
     kappa_values = [0.3498, 0.2448, 0.4186, 0.0797, 0.25]  # Replace with your desired values for kappas
 
     builder = LatticeBuilder(F0, NG, DELTAL,c)
