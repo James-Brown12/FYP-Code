@@ -9,7 +9,7 @@ import numpy as np
 import os
 
 class LatticeBuilder:
-    def __init__(self, f0, ng, deltal):
+    def __init__(self, f0, ng, deltal,c):
         """
         Initialize the LatticeBuilder.
 
@@ -17,10 +17,12 @@ class LatticeBuilder:
         - f0: Central frequency.
         - ng: Group index.
         - deltal: Unit delay of the waveguide.
+        - c: speed of light
         """
         self.f0 = f0
         self.ng = ng
         self.deltal = deltal
+        self.c = c
         self.interconnect = None  # Will be initialized during lattice building
 
     def neff(self, phi):
@@ -33,7 +35,7 @@ class LatticeBuilder:
         Returns:
         - Effective index of the waveguide.
         """
-        return (phi * 3.0e8) / (2 * np.pi * self.f0 * self.deltal) + self.ng
+        return (phi * self.c) / (2 * np.pi * self.f0 * self.deltal) + self.ng
 
     def set_couplers(self, kappa_values):
         """
@@ -132,11 +134,12 @@ if __name__ == "__main__":
     F0 = 193.1e12
     NG = 8.05894
     FSR = 120e9
-    DELTAL = 3.0e8 / FSR / NG
-
+    c = 299792458
+    DELTAL = c / FSR / NG
     # Example usage
     phi_values = [1.0, 0.0, 1.0, 0.0]  # Replace with your desired value for phi
     kappa_values = [0.3498, 0.2448, 0.4186, 0.0797, 0.25]  # Replace with your desired values for kappas
 
-    builder = LatticeBuilder(F0, NG, DELTAL)
+    builder = LatticeBuilder(F0, NG, DELTAL,c)
     builder.build_lattice(phi_values, kappa_values)
+
