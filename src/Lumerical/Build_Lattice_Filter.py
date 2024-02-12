@@ -61,7 +61,7 @@ class LatticeBuilder:
             ele_name = f"WG_{i}"
             self.interconnect.set("name", ele_name)
             self.interconnect.set("x position", 250 + i * 500)
-            self.interconnect.set("y position", 250)
+            self.interconnect.set("y position", -250)
 
             # Set unit delay of waveguide and twice that for the last one
             self.interconnect.set("length", 2 * self.deltal) if i + 1 != len(phi_values) else self.interconnect.set("length", self.deltal)
@@ -81,7 +81,8 @@ class LatticeBuilder:
         self.interconnect.addelement("Optical Network Analyzer")
         ele_name = "OPA"
         self.interconnect.set("name", ele_name)
-        self.interconnect.set("y position", -250)
+        self.interconnect.set("y position", 250)
+        self.interconnect.set("number of input ports", 2)
 
     def connect(self, kappa_values,phi_values):
         """
@@ -100,7 +101,7 @@ class LatticeBuilder:
 
         self.interconnect.connect("OPA","output","C_0","port 1")
         self.interconnect.connect("OPA","input 1",f"C_{len(kappa_values)-1}","port 3") #through port values
-        #self.interconnect.connect("OPA","input 2",f"C_{len(kappa_values)-1}","port 4") #cross port values
+        self.interconnect.connect("OPA","input 2",f"C_{len(kappa_values)-1}","port 4") #cross port values
 
     def build_lattice(self, phi_values, kappa_values):
         """
