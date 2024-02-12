@@ -71,6 +71,37 @@ class LatticeBuilder:
             self.interconnect.set("group index 1", self.ng)
             self.interconnect.set("effective index 1", self.neff(phi))
 
+    def set_analyzer(self):
+        """
+        Add Optical Analyser to the lattice filter.
+
+        Parameters:
+        - phi_values: Array of phase values for waveguides.
+        """
+        self.interconnect.addelement("Optical Network Analyzer")
+        ele_name = "OPA"
+        self.interconnect.set("name", ele_name)
+        self.interconnect.set("y position", -250)
+
+    def connect(self, kappa_values,phi_values):
+        """
+        Connect the placed couplers and waveguides correctly in a lattice configuration.
+
+        Parameters:
+        - kappa_values: Array of kappa values for couplers.
+        - phi_values: Array of phase values for waveguides.
+        """
+        for i, kappa in enumerate(kappa_values):
+            if i+1 < len(kappa_values):
+                self.interconnect.connect(f"C_{i}","port 4",f"C_{i+1}","port 2")
+        for i, phi in enumerate(phi_values):
+            self.interconnect.connect(f"WG_{i}","port 1",f"C_{i}","port 3")
+            self.interconnect.connect(f"WG_{i}","port 2",f"C_{i+1}","port 1")
+
+        self.interconnect.connect("OPA","output","C_0","port 1")
+        self.interconnect.connect("OPA","input 1",f"C_{len(kappa_values)-1}","port 3") #through port values
+        #self.interconnect.connect("OPA","input 2",f"C_{len(kappa_values)-1}","port 4") #cross port values
+
     def build_lattice(self, phi_values, kappa_values):
         """
         Build the lattice filter in INTERCONNECT and save as .icp file.
@@ -89,6 +120,8 @@ class LatticeBuilder:
         with lumapi.INTERCONNECT(hide=True) as self.interconnect:
             self.set_couplers(kappa_values)
             self.set_waveguides(phi_values)
+            self.set_analyzer()
+            self.connect(kappa_values,phi_values)
 
             # Save the INTERCONNECT layout
             self.interconnect.save(file_path)
