@@ -68,14 +68,14 @@ def FindCoefficents(A,N):
     Parameters:  A: Coefficient array of polynomial in z^-1 of degree N in form [z^-N, z^-(N-1, ... z^-1, z^0]
                  N: Filter order
              
-    Return:     kappa: List of power coupling coefficients kappa_n's (k_n, k_n-1, ... k_0)
-                phi:   List of phase terms phi_n
+    Return:     kappa_values: List of power coupling coefficients kappa_n's (k_n, k_n-1, ... k_0)
+                phi_values:   List of phase terms phi_n (phi_n,phi_n-1,...phi_0)
                 
     """
     B_N = np.array(FindB(A))
     A_N = np.array(A)
-    phi = []  # List of phi_ns
-    kappa = []  # List of kappas
+    phi_values = []  # List of phi_ns
+    kappa_values = []  # List of kappass
     n = N
 
     while n >= 0:
@@ -86,7 +86,7 @@ def FindCoefficents(A,N):
         #def of cos and sin from coupling power ratio
         c_n = np.sqrt(1.0-kappa_n)
         s_n = np.sqrt(kappa_n)
-        kappa.append(kappa_n)
+        kappa_values.append(kappa_n)
 
         if n > 0:
             # Step-down recursion relation operations Eq) 61/62
@@ -95,7 +95,7 @@ def FindCoefficents(A,N):
 
             # Calculate phi_n Eq) 65
             phi_n = -(np.angle(A_N1_tild[0]) + np.angle(B_N1[0]))
-            phi.append(phi_n)
+            phi_values.append(phi_n)
 
             # Update A_N1 and eliminate constant term same as multiply by z Eq)61
             A_N1 = np.exp(1j * phi_n) * A_N1_tild[:-1]
@@ -108,12 +108,12 @@ def FindCoefficents(A,N):
         A_N = A_N1
         B_N = B_N1
 
-    return kappa, phi
+    return kappa_values, phi_values
 
 
 if __name__ == "__main__":
-        # Example usage
-        #Let A be the coeffents of the desired transfer function
+    # Example usage
+    #Let A be the coeffents of the desired transfer function
     A = [-0.250,0.500,-0.250]
     #Let N be the disired order of you optical filter i.e) number of stages
     N = 2

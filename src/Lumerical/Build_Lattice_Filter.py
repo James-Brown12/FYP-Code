@@ -1,35 +1,108 @@
+
+#import lumapi
 import importlib.util
-#default path for current release 
 spec_win = importlib.util.spec_from_file_location('lumapi', 'C:\\Program Files\\Lumerical\\v241\\api\\python\\lumapi.py')
-#Functions that perform the actual loading
 lumapi = importlib.util.module_from_spec(spec_win) #windows
 spec_win.loader.exec_module(lumapi)
 
+import numpy as np
+import os
 
+class LatticeBuilder:
+    def __init__(self, f0, ng, deltal):
+        """
+        Initialize the LatticeBuilder.
 
-def Build_Lattice(phis, kappas):
+        Parameters:
+        - f0: Central frequency.
+        - ng: Group index.
+        - deltal: Unit delay of the waveguide.
+        """
+        self.f0 = f0
+        self.ng = ng
+        self.deltal = deltal
+        self.interconnect = None  # Will be initialized during lattice building
 
-     # Start the INTERCONNECT session
-    with lumapi.INTERCONNECT(hide=True) as interconnect:
+    def neff(self, phi):
+        """
+        Calculate the effective index of the waveguide.
+
+        Parameters:
+        - phi: Phase value.
+
+        Returns:
+        - Effective index of the waveguide.
+        """
+        return (phi * 3.0e8) / (2 * np.pi * self.f0 * self.deltal) + self.ng
+
+    def set_couplers(self, kappa_values):
+        """
+        Add couplers to the lattice filter based on kappa values.
+
+        Parameters:
+        - kappa_values: Array of kappa values for couplers.
+        """
+        for i, kappa in enumerate(kappa_values):
+            self.interconnect.addelement("Waveguide Coupler")
+            ele_name = f"C_{i}"
+            self.interconnect.set("name", ele_name)
+            self.interconnect.set("x position", i * 500)
+            self.interconnect.set("Coupling Coefficient 1", np.sin(kappa * np.pi) ** 2)
+
+    def set_waveguides(self, phi_values):
+        """
+        Add waveguides to the lattice filter.
+
+        Parameters:
+        - phi_values: Array of phase values for waveguides.
+        """
+        for i, phi in enumerate(phi_values):
+            self.interconnect.addelement("Straight Waveguide")
+            ele_name = f"WG_{i}"
+            self.interconnect.set("name", ele_name)
+            self.interconnect.set("x position", 250 + i * 500)
+            self.interconnect.set("y position", 250)
+
+            # Set unit delay of waveguide and twice that for the last one
+            self.interconnect.set("length", 2 * self.deltal) if i + 1 != len(phi_values) else self.interconnect.set("length", self.deltal)
+
+            # Set other properties of waveguide based on specs
+            self.interconnect.set("frequency", self.f0)
+            self.interconnect.set("group index 1", self.ng)
+            self.interconnect.set("effective index 1", self.neff(phi))
+
+    def build_lattice(self, phi_values, kappa_values):
+        """
+        Build the lattice filter in INTERCONNECT and save as .icp file.
+
+        Parameters:
+        - phi_values: Array of phase values for waveguides.
+        - kappa_values: Array of kappa values for couplers.
+        """
         
 
-        # Add resonators to the lattice filter based on kappas
-        for kappa in kappas:
-            interconnect.addelement("Waveguide Coupler")
-            eleName = f"coupler_{kappa}"
-            interconnect.set("name", eleName)
-            interconnect.set("coupling coefficient 1", kappa)
-    
-        # Save the INTERCONNECT layout (optional)
-        interconnect.save("Lattice_Filter.icp")
-    
+        #define where to savefile
+        script_directory = os.path.dirname(__file__)
+        file_path = os.path.join(script_directory, "Lattice_Filter.icp")
 
+        # Start the INTERCONNECT session
+        with lumapi.INTERCONNECT(hide=True) as self.interconnect:
+            self.set_couplers(kappa_values)
+            self.set_waveguides(phi_values)
 
-    
+            # Save the INTERCONNECT layout
+            self.interconnect.save(file_path)
 
 if __name__ == "__main__":
-    # Example usage
-    phi_values = [0.5,0.3]  # Replace with your desired value for phi
-    kappas_values = [0.1, 0.2, 0.3]  # Replace with your desired values for kappas
+    # Example Specs
+    F0 = 193.1e12
+    NG = 8.05894
+    FSR = 120e9
+    DELTAL = 3.0e8 / FSR / NG
 
-    Build_Lattice(phi_values, kappas_values)
+    # Example usage
+    phi_values = [1.0, 0.0, 1.0, 0.0]  # Replace with your desired value for phi
+    kappa_values = [0.3498, 0.2448, 0.4186, 0.0797, 0.25]  # Replace with your desired values for kappas
+
+    builder = LatticeBuilder(F0, NG, DELTAL)
+    builder.build_lattice(phi_values, kappa_values)
