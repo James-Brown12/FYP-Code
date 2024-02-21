@@ -4,6 +4,18 @@ import matplotlib.pyplot as plt
 
 class FIRFilter:
     def __init__(self, order, t_width, filter_type,endpoints):
+
+        """
+        Function to obtain the bands(pass or stop), in units of normalized frequency, from
+        the center Frequencies (in nm)
+    
+        Parameters: order: Order of the desired filter
+                    t_width: Transition width between pass and stopband Note: t_width ~ 1/order
+                    endpoints: endpoints of Frequency of interest.
+                    filter_type: string that indicates type of filter: ["Bandpass" ,"BandStop","Lowpass","Highpass"]
+                                    
+        Return: List of tuples representing band (normalized) frequency intervals
+        """
         self.order = order
         self.t_width = t_width
         self.filter_type = filter_type
@@ -12,88 +24,71 @@ class FIRFilter:
     def normalized_frequency(self, f):
         return (f - self.fstart) / (2 * (self.fend - self.fstart))
 
-    def obtain_bands(self, center_frequencies, band_width):
+    def obtain_bands(self, center_frequencies, band_width,cutoff_frequency=None):
         """
         Function to obtain the bands(pass or stop), in units of normalized frequency, from
         the center Frequencies (in nm)
     
-        Parameters: center_frequencies: ndarray of center Frequencies, longest Frequency/
-                                    lowest frequency is in position 0 of array
-                    band_width: desired width of pass (or stop) band, in nm
-                        endpoints: endpoints of Frequency of interest.
-                            typef: string that indicates type of filter, this parameter is
-                                    either "Pass" or "Stop"
+        Parameters: center_frequencies: ndarray of center Frequencies, lowest frequency is in position 0 of array
+                    band_width: desired width of pass (or stop) band, in Hz
+                    endpoints: endpoints of Frequency of interest.
+                    filter_type: string that indicates type of filter: ["Bandpass" ,"BandStop","Lowpass","Highpass"]
                                     
         Return: List of tuples representing band (normalized) frequency intervals
         """
+        
         bands = []
-        for frequency in center_frequencies:
-            f_low = frequency - band_width/2.0
-            f_up = frequency + band_width/2.0
-            omega_lower = self.normalized_frequency(f_low)
-            omega_upper = self.normalized_frequency(f_up)
-            if self.filter_type == "Pass":
-                bands.append((omega_lower, omega_upper, 1.0))
-            else:
-                bands.append((omega_lower, omega_upper, 0.0))
+
+        if self.filter_type == "Lowpass":
+            bands.append((0.0, self.normalized_frequency(cutoff_frequency), 1.0))
+        elif self.filter_type == "Highpass":
+            bands.append((self.normalized_frequency(cutoff_frequency), 0.5, 1.0))
+        else:
+            for frequency in center_frequencies:
+                f_low, f_up = frequency - band_width / 2.0, frequency + band_width / 2.0
+                bands.append((self.normalized_frequency(f_low), self.normalized_frequency(f_up), 1.0 if self.filter_type == "Bandpass" else 0.0))
+                
         return bands
 
     def fir_filter_parks_mcclellan(self, bands):
-        freq = []  # Frequency points
-        gain = []  # Gain of filter for bands in freq, size of this list should be exactly half the size of freq
+        freq, gain = [], []
 
-        # Build lists freq and gain
         for band in bands:
             start_freq, end_freq, band_gain = band
             t_width = self.normalized_frequency(self.t_width)
 
-            # Insert point just before the start frequency
-            if start_freq - t_width > 0.0:
-                freq.extend([start_freq - t_width])
-                
-            # Add points for the passband
-            freq.extend([start_freq, end_freq])
+            freq.extend(filter(lambda x: 0.0 < x < 0.5, [start_freq - t_width, start_freq, end_freq, end_freq + t_width]))
             gain.extend([band_gain])
+            if self.filter_type !="Highpass":
+                gain.extend([0.0 if self.filter_type in {"Bandpass", "Lowpass"} else 1.0])
 
-            # Insert point just after the end frequency with gain 0.0 or 1.0 based on filter type
-            if end_freq + t_width < 0.5:
-                freq.extend([end_freq + t_width])
-                gain.extend([0.0] if self.filter_type == 'Pass' else [1.0])
 
-        # Ensure that 0.0 and 0.5 are in the frequency list
-        if 0.0 not in freq:
-            freq.insert(0, 0.0)
-            #ensures gain element for between zero and first band frequency
-            gain.insert(0,0.0 if self.filter_type == 'Pass' else 1.0)
+        freq = [0.0] + freq + [0.5]
+        if self.filter_type !="Lowpass":
+            gain = [0.0 if self.filter_type in {"Bandpass", "Highpass"} else 1.0] + gain
 
-        if 0.5 not in freq:
-            freq.extend([0.5])
-
-        # Design the filter
-        coefs = remez( numtaps = self.order + 1, bands=freq, desired=gain)
-        
+        print(freq,gain)
+        coefs = remez(numtaps=self.order + 1, bands=freq, desired=gain)
         return coefs
 
 
 
 def plot_response(w, h, title):
     "Utility function to plot response functions"
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(w, 20*np.log10(np.abs(h)))
+    fig, ax = plt.subplots()
+    ax.plot(w, 20 * np.log10(np.abs(h)))
     ax.set_ylim(-40, 5)
     ax.grid(True)
-    ax.set_xlabel('Frequency (Hz)')
-    ax.set_ylabel('Gain (dB)')
-    ax.set_title(title)
+    ax.set(xlabel='Frequency (Hz)', ylabel='Gain (dB)', title=title)
     plt.show()
 
 def example_usage():
-    filter_instance = FIRFilter(order=100, t_width=10, filter_type='Pass',endpoints = (0, 500))
+    filter_instance = FIRFilter(order=100, t_width=10, filter_type='Bandstop',endpoints = (0, 500))
     center_frequencies = np.array([100, 300])   
     band_width = 100
+    cutoff_frequency=100
 
-    bands = filter_instance.obtain_bands(center_frequencies, band_width)
+    bands = filter_instance.obtain_bands(center_frequencies, band_width,cutoff_frequency)
     coefs= filter_instance.fir_filter_parks_mcclellan(bands)
     
     # Plot the frequency response
