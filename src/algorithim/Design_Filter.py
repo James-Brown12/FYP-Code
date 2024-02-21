@@ -83,17 +83,18 @@ def plot_response(w, h, title):
     plt.show()
 
 def example_usage():
-    filter_instance = FIRFilter(order=100, t_width=10, filter_type='Bandstop',endpoints = (0, 500))
-    center_frequencies = np.array([100, 300])   
-    band_width = 100
-    cutoff_frequency=100
+    for filter_type in ['Bandstop','Bandpass','Highpass','Lowpass']:
+        filter_instance = FIRFilter(order=100, t_width=10, filter_type=filter_type,endpoints = (0, 500))
+        center_frequencies = np.array([100, 300])   
+        band_width = 100
+        cutoff_frequency=100
 
-    bands = filter_instance.obtain_bands(center_frequencies, band_width,cutoff_frequency)
-    coefs= filter_instance.fir_filter_parks_mcclellan(bands)
-    
-    # Plot the frequency response
-    w, h = freqz(coefs, [1], worN=2000,fs=1)
-    plot_response(w,h,"multiband")
+        bands = filter_instance.obtain_bands(center_frequencies, band_width,cutoff_frequency)
+        coefs= filter_instance.fir_filter_parks_mcclellan(bands)
+        
+        # Plot the frequency response
+        w, h = freqz(coefs, [1], worN=2000,fs=1)
+        plot_response(w,h,"multiband")
    
 if __name__ == "__main__":
     example_usage()
