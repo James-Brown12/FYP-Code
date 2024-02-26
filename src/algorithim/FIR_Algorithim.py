@@ -114,11 +114,10 @@ def FindCoefficents(A):
 if __name__ == "__main__":
     # Example usage
     #Let A be the coeffents of the desired transfer function
-    A = [-0.250,0.500,-0.250]
-    #Let N be the disired order of you optical filter i.e) number of stages
-    N = 2
+    A = [0.5,0.30717,0.0,-0.07797,0.0,0.02581,0.0,-0.00628]
+    
     #calculate coefficents
-    kappa,phi = FindCoefficents(A, N)
+    kappa,phi = FindCoefficents(A)
 
     print(kappa,phi)
 
