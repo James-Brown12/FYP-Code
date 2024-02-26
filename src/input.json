@@ -1,0 +1,22 @@
+{
+"Optical paramters":{
+            "n_g": 0.0,                 
+            "FSR": 0.0                 
+            },
+
+
+"Initialise Digital filter":{
+            "filter_type": "",          
+            "t_width":0.0,              
+            "endpoints": [0.0,0.5],     
+            "filter_order": 7         
+            },
+
+
+"Frequency parameters":{
+            "center_frequencies": [],   
+            "band_width": 0.0,         
+            "cutoff_frequncy": null  
+            } 
+    
+}

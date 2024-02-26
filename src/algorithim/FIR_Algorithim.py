@@ -59,14 +59,14 @@ def FindB(A):
     return np.flip(B) #flips coeffcients to give in correct order
 
 
-def FindCoefficents(A,N):
+def FindCoefficents(A):
 
 
     """
     Find coefficents kappa and phi from the z-transform coeffiecients of FIR filter designed using Digtal signal processing methods (Madsen and Zhao Ch 4.5)
     
     Parameters:  A: Coefficient array of polynomial in z^-1 of degree N in form [z^-N, z^-(N-1, ... z^-1, z^0]
-                 N: Filter order
+                 
              
     Return:     kappa_values: List of power coupling coefficients kappa_n's (k_n, k_n-1, ... k_0)
                 phi_values:   List of phase terms phi_n (phi_n,phi_n-1,...phi_0)
@@ -76,7 +76,7 @@ def FindCoefficents(A,N):
     A_N = np.array(A)
     phi_values = []  # List of phi_ns
     kappa_values = []  # List of kappass
-    n = N
+    n = len(A_N)-1
 
     while n >= 0:
         # Calculate kappa Eq) 60

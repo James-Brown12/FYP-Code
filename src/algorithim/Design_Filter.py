@@ -3,12 +3,9 @@ from scipy.signal import remez,freqz
 import matplotlib.pyplot as plt
 
 class FIRFilter:
-    def __init__(self, order, t_width, filter_type,endpoints):
+    def __init__(self, order:int,filter_type:str, t_width:float, endpoints):
 
         """
-        Function to obtain the bands(pass or stop), in units of normalized frequency, from
-        the center Frequencies (in nm)
-    
         Parameters: order: Order of the desired filter
                     t_width: Transition width between pass and stopband Note: t_width ~ 1/order
                     endpoints: endpoints of Frequency of interest.
@@ -24,10 +21,10 @@ class FIRFilter:
     def normalized_frequency(self, f):
         return (f - self.fstart) / (2 * (self.fend - self.fstart))
 
-    def obtain_bands(self, center_frequencies, band_width,cutoff_frequency=None):
+    def obtain_bands(self, center_frequencies, band_width:float,cutoff_frequency:float=None):
         """
         Function to obtain the bands(pass or stop), in units of normalized frequency, from
-        the center Frequencies (in nm)
+        the center Frequencies
     
         Parameters: center_frequencies: ndarray of center Frequencies, lowest frequency is in position 0 of array
                     band_width: desired width of pass (or stop) band, in Hz
@@ -50,7 +47,7 @@ class FIRFilter:
                 
         return bands
 
-    def fir_filter_parks_mcclellan(self, bands):
+    def fir_filter_parks_mcclellan(self, bands, plot=False):
         freq, gain = [], []
 
         for band in bands:
@@ -66,9 +63,12 @@ class FIRFilter:
         freq = [0.0] + freq + [0.5]
         if self.filter_type !="Lowpass":
             gain = [0.0 if self.filter_type in {"Bandpass", "Highpass"} else 1.0] + gain
+        coefs = remez(numtaps=self.order, bands=freq, desired=gain)
 
-        print(freq,gain)
-        coefs = remez(numtaps=self.order + 1, bands=freq, desired=gain)
+        if plot == True:
+            w, h = freqz(coefs, [1], worN=2000,fs=1)
+            plot_response(w,h,"Plot of FIR Transfer Function")
+
         return coefs
 
 
@@ -85,7 +85,7 @@ def plot_response(w, h, title):
 def example_usage():
     for filter_type in ['Bandstop','Bandpass','Highpass','Lowpass']:
         filter_instance = FIRFilter(order=100, t_width=10, filter_type=filter_type,endpoints = (0, 500))
-        center_frequencies = np.array([100, 300])   
+        center_frequencies = np.array([100.0])   
         band_width = 100
         cutoff_frequency=100
 
