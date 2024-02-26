@@ -76,15 +76,15 @@ def Driver():
             "Initialise Digital filter":{
             "filter_order": 7,          # Max order of the FIR filter/ number of couplers optical filter
             "filter_type": "Bandpass",  # "Lowpass","Highpass","Bandpass", "Bandstop"
-            "t_width":50,               # Transition width between stop and pass band Hz
-            "endpoints": [0,500],     # The frequency range of interest
+            "t_width":50,               # Transition width between stop and pass band (Hz)
+            "endpoints": [0,500],       # The frequency range of interest (Hz)
             
             },
 
             "Frequency parameters":{
-            "center_frequencies": [300],   # list of center frequncies for bamds
-            "band_width": 200.0,          # Band width of the bands
-            "cutoff_frequncy": None,    # cutoff frequncy for high and lowpass filters
+            "center_frequencies": [300],  # list of center frequncies for bamds
+            "band_width": 200.0,          # Band width of the bands (Hz)
+            "cutoff_frequncy": None,      # cutoff frequncy for high and lowpass filters
             }
         }
 
