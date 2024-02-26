@@ -8,7 +8,7 @@ import os
 "CONSTANTS"
 C = 299792458
 
-def FilterParameters(filename):
+def UserInput(filename):
     """
     Function to receive the necessary parameters from an input file in JSON format to design the filter
 
@@ -63,9 +63,7 @@ def FilterParameters(filename):
         print(f"Error! File {filename} not found.")
         exit()
 
-
-
-def Driver():
+def FindOpticalParameters():
 
     params = {
             "Optical paramters":{
@@ -76,7 +74,7 @@ def Driver():
             "Initialise Digital filter":{
             "filter_order": 7,          # Max order of the FIR filter/ number of couplers optical filter
             "filter_type": "Bandpass",  # "Lowpass","Highpass","Bandpass", "Bandstop"
-            "t_width":50,               # Transition width between stop and pass band (Hz)
+            "t_width":10,               # Transition width between stop and pass band (Hz)
             "endpoints": [0,500],       # The frequency range of interest (Hz)
             
             },
@@ -89,8 +87,6 @@ def Driver():
         }
 
     
-    
-
     Optical_paramters = params.get("Optical paramters", {})
     filter = params.get("Initialise Digital filter", {})
     frequency= params.get("Frequency parameters", {})
@@ -102,12 +98,13 @@ def Driver():
   
     #Find the correct optical parameters for the found transfer fuction A implemented in FIR_Algorithim.py
     kappa,phi = fir.FindCoefficents(A=A)
-        
-        
-
+    
     return kappa, phi
 
+def BuildLumerical():
+    
+    return
 
 if __name__ == "__main__":
-    kappa, phi = Driver()
+    kappa, phi = FindOpticalParameters()
     print(kappa,phi)
