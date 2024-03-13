@@ -1,6 +1,6 @@
 import Algorithim.Design_Filter as df
 import Algorithim.FIR_Algorithim as fir
-import Lumerical.Build_Lattice_Filter as Lum
+#import Lumerical.Build_Lattice_Filter as Lum
 import numpy as np
 import json
 import os
@@ -73,7 +73,7 @@ def FindOpticalParameters():
             },
 
             "Initialise Digital filter":{
-            "filter_order": 8,          # Max order of the FIR filter/ number of couplers optical filter
+            "filter_order": 10,          # Max order of the FIR filter/ number of couplers optical filter
             "filter_type": "Bandpass",  # "Lowpass","Highpass","Bandpass", "Bandstop"
             "t_width":5,               # Transition width between stop and pass band (Hz)
             "endpoints": [0,100],       # The frequency range of interest (Hz)
@@ -81,7 +81,7 @@ def FindOpticalParameters():
             },
 
             "Frequency parameters":{
-            "center_frequencies": [50],  # list of center frequncies for bamds
+            "center_frequencies": [193.5],  # list of center frequncies for bands
             "band_width": 20.0,          # Band width of the bands (Hz)
             "cutoff_frequncy": None,      # cutoff frequncy for high and lowpass filters
             }
@@ -101,10 +101,6 @@ def FindOpticalParameters():
     kappa,phi = fir.FindCoefficents(A=A)
     
     return kappa, phi
-
-def BuildLumerical():
-    
-    return
 
 if __name__ == "__main__":
     kappa, phi = FindOpticalParameters()

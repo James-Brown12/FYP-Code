@@ -76,17 +76,20 @@ def FindCoefficents(A):
     A_N = np.array(A)
     phi_values = []  # List of phi_ns
     kappa_values = []  # List of kappass
+    theta_values =[] #list of coupling angles
     n = len(A_N)-1
 
     while n >= 0:
         # Calculate kappa Eq) 60
         ratio = np.abs(B_N[0] / A_N[0])**2
         kappa_n = ratio / (1.0 + ratio)
+        coupling_angle = np.arctan(B_N[0] / A_N[0])
 
         #def of cos and sin from coupling power ratio
         c_n = np.sqrt(1.0-kappa_n)
         s_n = np.sqrt(kappa_n)
         kappa_values.append(kappa_n)
+        theta_values.append(coupling_angle)
 
         if n > 0:
             # Step-down recursion relation operations Eq) 61/62
@@ -108,18 +111,18 @@ def FindCoefficents(A):
         A_N = A_N1
         B_N = B_N1
 
-    return kappa_values, phi_values
+    return kappa_values, phi_values,theta_values
 
 
 if __name__ == "__main__":
     # Example usage
     #Let A be the coeffents of the desired transfer function
-    A = [0.5,0.30717,0.0,-0.07797,0.0,0.02581,0.0,-0.00628]
-    
+    A = [-0.00369,-0.02777,-0.06446,-0.07708,-0.11144, -0.00643,-0.02560,0.25958,0.00000,0.35648,-0.67658,-0.10130,0.31968, 0.00574,0.00425,0.03567,0.01571,0.01284,-0.00428,-0.00647,-0.00813,-0.00482,0.00397,0.00298]
+    #A =[-0.250,0.433,-0.250]
     #calculate coefficents
-    kappa,phi = FindCoefficents(A)
+    kappa,phi,theta = FindCoefficents(A)
 
-    print(kappa,phi)
+    print(np.array(theta)/np.pi,np.array(phi)/np.pi)
 
 """
 Result:
