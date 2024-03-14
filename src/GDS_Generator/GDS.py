@@ -4,16 +4,12 @@ nd.clear_layout()
 import numpy as np
 from scipy.optimize import minimize
 
-
 nd.add_layer(name='waveguide', layer=1, accuracy=0.001)
 nd.add_layer(name='trench', layer=2, accuracy=0.001)
 nd.add_layer(name='grating trench', layer=3, accuracy=0.001)
 nd.add_layer(name='SWG trench', layer=4, accuracy=0.001)
-
 nd.add_layer2xsection(xsection='x', layer='waveguide')
 nd.add_layer2xsection(xsection='x', layer='trench', growx=3,growy=3)
-
-
 
 def MZI(width=0.5, Lc=0.25, length=20, sep=100, gap=0.25):
     with nd.Cell("MZI") as MZI:
@@ -48,7 +44,6 @@ def delay1(width=0.5, length=100, angle=130.5699, radius=32.9115):
         print (nd.trace.trace_length())
     return delay
 
-
 def BumpWaveguide(straight_length, delay_length):
     """
     Calculate the angle and radius of a bump in a waveguide.
@@ -76,8 +71,6 @@ def BumpWaveguide(straight_length, delay_length):
 
     return angle, radius
 
-# You can define other functions in this file as well if needed
-
 def coupler(width=0.5, length=20, sep=100, gap=20):
     with nd.Cell("Coupler") as C:
         # Upper arm
@@ -98,46 +91,18 @@ def coupler(width=0.5, length=20, sep=100, gap=20):
         nd.Pin("b1", pin=l2.pin['b0']).put()
     return C
 
-def read_xy_file(filename):
-    data = []
-    with open(filename, 'r') as file:
-        for line in file:
-            x, y = map(float, line.split())
-            data.append((x, y))
-    return data
 
-def find_x_for_y(data, y_values, tol=0.1):
-    x_values = []
-    for y in y_values:
-        for x, y_val in data:
-            if abs(y_val - y) <= tol:
-                x_values.append(x)
-                break
-        else:
-            x_values.append(None)  # If Y value not found, append None
-    return x_values
-
+########MATERIAL PROPERTIES################
 lamda = 1550e-9
-#silicon @1550nm
 n_g = 4.40063
 n_e = 2.29916
 
-#define delay_length from parameters
-bandwidth = 5e-9
-L_base = lamda**2/(2*n_g*bandwidth)      #defines length based on half FSR 
-L_fs = lamda/n_e                        #shifting factor 
+x=1500 # x scale factor
+y = 1000 # y scale factor
 
-[0.5,0.29,0.2,0.08,0.04]
+########COUPLERS################
 width = 0.5 # width of the waveguide
 sep = 100 #distance between two input ports of coupler 
-
-########DLEAY################
-straight_length = 100
-delay_length= L_base
-angle, radius = BumpWaveguide(straight_length, delay_length)
-########################
-y = 100 #scale factor
-
 #Couplers 250nm gap
 C1=coupler(width=width, length=60.3015, sep=sep, gap=0.25+width) #0.5
 C2=coupler(width=width, length=44.2211, sep=sep, gap=0.25+width) #0.29
@@ -152,33 +117,268 @@ C8=coupler(width=width, length=57.0854, sep=sep, gap=0.3+width) #0.2
 C9=coupler(width=width, length=35.3769, sep=sep, gap=0.3+width) #0.08
 C10=coupler(width=width, length=24.9246, sep=sep, gap=0.3+width)#0.04
 
-
-C1=coupler(width=width, length=92, sep=sep, gap=gap+width).put(0,0)
-D1= delay1(width=width, length=straight_length, angle=angle, radius=radius).put(C1.pin['b0'])
-S_lower=nd.strt(width= width, length=straight_length, xs='x').put(C1.pin['b1'])
-C2=coupler(width=width, length=66, sep=sep, gap=gap+width).put(D1.pin['b0'])
+########STRAIGHT################
 straight_length = 400
-delay_length= 200*2
-angle, radius = BumpWaveguide(straight_length, delay_length)
-D1= delay1(width=width, length=straight_length, angle=angle, radius=radius).put(C2.pin['b1'], flip=True)
-S_lower=nd.strt(width= width, length=straight_length, xs='x').put(C2.pin['b0'])
-C3=coupler(width=width, length=12, sep=sep, gap=gap+width).put(S_lower.pin['b0'])
+srt = nd.strt(width= width, length=straight_length, xs='x')
+
+########DLEAY################
+#place all couplers
+C1.put(3*x,0)
+C2.put(3*x,0.25*y)
+C3.put(3*x,0.5*y)
+C4.put(3*x,0.75*y)
+C5.put(3*x,y)
+srt.put(3*x,-0.3*y)
+
+C6.put(4*x,0)
+C7.put(4*x,0.25*y)
+C8.put(4*x,0.5*y)
+C9.put(4*x,0.75*y)
+C10.put(4*x,y)
+
+bandwidths = [5e-9,2.5e-9]
+c =0
+for bandwidth in bandwidths:
+    
+    L_base = lamda**2/(2*n_g*bandwidth)      #defines length based on half FSR 
+    L_fs = lamda/n_e                        #shifting factor 
+
+    delay_length= L_base*1E6
+
+    angle, radius = BumpWaveguide(straight_length, delay_length) #dL
+    D1=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+    angle, radius = BumpWaveguide(straight_length, 2*delay_length) #2dL
+    D2=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+    angle, radius = BumpWaveguide(straight_length, 2*delay_length + L_fs/2) #2dL +pi
+    D3=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+
+    #second stage no shift dL => dL/2  
+    angle, radius = BumpWaveguide(straight_length, delay_length/2) #dL/2
+    D4=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+    D5=D1 #2*dL/2
+    angle, radius = BumpWaveguide(straight_length, delay_length + L_fs/2) 
+    D6=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+
+    #third stage with shift dL => dl/2  + L_fs/4 
+    angle, radius = BumpWaveguide(straight_length, delay_length/2 + L_fs/4)
+    D7=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+    D8=D6
+    angle, radius = BumpWaveguide(straight_length, delay_length + L_fs)
+    D9=delay1(width=width, length=straight_length, angle=angle, radius=radius)
+    ######################################
+
+    
+
+    #place all delays
+    D1.put(0,y+c)
+    D2.put(0,0.5*y+c,flip=True)
+    D3.put(0,0+c,flip=True)
+
+    D4.put(x,y+c)
+    D5.put(x,0.5*y+c,flip=True)
+    D6.put(x,0+c,flip=True)
+
+    D7.put(2*x,y+c)
+    D9.put(2*x,0.5*y+c,flip=True)
+
+    #################single 3 coupler stage 250nm gap###########################
+    C1_250 = C1.put(0,-y+c)
+    D1_250 = D1.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C2.put(D1_250.pin['b0'])
+    D2_250 = D2.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C4.put(srt2_250.pin['b0'])
+    ##############################################################
+
+    ################single 4 coupler stage 250nm gap##############################
+    C1_250 = C1.put(0,-2*y+c)
+    D1_250 = D1.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C3.put(D1_250.pin['b0'])
+    D2_250 = D2.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C3.put(srt2_250.pin['b0'])
+    D3_250 = D3.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C5.put(srt3_250.pin['b0'])
+    ##############################################################
+
+    ##########4 channel(5nm)- 4 coupler stages 250nm gap ##############################
+    u1 = nd.sinebend(width=width, distance=150, offset=sep, xs='x')
+    u2 = nd.sinebend(width=width, distance=150, offset=-sep, xs='x')
+
+    C1_250 = C1.put(0,-3*y+c)
+    D1_250 = D1.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C3.put(D1_250.pin['b0'])
+    D2_250 = D2.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C3.put(srt2_250.pin['b0'])
+    D3_250 = D3.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C5.put(srt3_250.pin['b0'])
+
+    #connections
+    bend2 = u1.put(C4_250.pin["b0"])
+    bend1 = u2.put(C4_250.pin["b1"])
+
+    #lower stage
+    C1_250 = C1.put("a0",bend1.pin["b0"])
+    D1_250 = D4.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C3.put(D1_250.pin['b0'])
+    D2_250 = D5.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C3.put(srt2_250.pin['b0'])
+    D3_250 = D6.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C5.put(srt3_250.pin['b0'])
+
+    #upper stage
+    C1_250 = C1.put("a0",bend2.pin["b0"])
+    D1_250 = D7.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C3.put(D1_250.pin['b0'])
+    D2_250 = D8.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C3.put(srt2_250.pin['b0'])
+    D3_250 = D9.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C5.put(srt3_250.pin['b0'])
+    ################################################################
+
+    ##########4 channel(5nm)- 3 coupler stages 250nm gap ##############################
+    u1 = nd.sinebend(width=width, distance=150, offset=sep, xs='x')
+    u2 = nd.sinebend(width=width, distance=150, offset=-sep, xs='x')
+    C1_250 = C1.put(0,-4*y+c)
+    D1_250 = D1.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C2.put(D1_250.pin['b0'])
+    D2_250 = D2.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C4.put(srt2_250.pin['b0'])
+    bend1 = u1.put(C3_250.pin["b0"])
+    bend2 = u2.put(C3_250.pin["b1"])
+
+    #lower stage
+    C1_250 = C1.put("a0",bend1.pin["b0"])
+    D1_250 = D4.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C2.put(D1_250.pin['b0'])
+    D2_250 = D5.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C4.put(srt2_250.pin['b0'])
+
+    #upper stage
+    C1_250 = C1.put("a0",bend2.pin["b0"])
+    D1_250 = D7.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C2.put(D1_250.pin['b0'])
+    D2_250 = D8.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C4.put(srt2_250.pin['b0'])
+    ################################################################
 
 
+    ###################### single 3 coupler stage 300nm gap ###############################
+    C1_300 = C6.put(4*x,-y+c)
+    D1_300 = D1.put(C1_300.pin['b0'])
+    srt1_300 = srt.put(C1_300.pin['b1'])
+    C2_300 = C7.put(D1_300.pin['b0'])
+    D2_300 = D2.put(C2_300.pin['b1'],flip=True)
+    srt2_300 = srt.put(C2_300.pin['b0'])
+    C3_300 = C9.put(srt2_300.pin['b0'])
+    #######################################################################
 
-C1=coupler(width=width, length=92, sep=sep, gap=gap+width).put(C3.pin['b0'])
-D1= delay1(width=width, length=straight_length, angle=angle, radius=radius).put(C1.pin['b0'])
-S_lower=nd.strt(width= width, length=straight_length, xs='x').put(C1.pin['b1'])
-C2=coupler(width=width, length=66, sep=sep, gap=gap+width).put(D1.pin['b0'])
-straight_length = 400
-delay_length= 200*2
-angle, radius = BumpWaveguide(straight_length, delay_length)
-D1= delay1(width=width, length=straight_length, angle=angle, radius=radius).put(C2.pin['b1'], flip=True)
-S_lower=nd.strt(width= width, length=straight_length, xs='x').put(C2.pin['b0'])
-C3=coupler(width=width, length=12, sep=sep, gap=gap+width).put(S_lower.pin['b0'])
+    ########################### single 4 coupler stage 300nm gap #######################
+    C1_300 = C6.put(4*x,-2*y+c)
+    D1_300 = D1.put(C1_300.pin['b0'])
+    srt1_300 = srt.put(C1_300.pin['b1'])
+    C2_300 = C8.put(D1_300.pin['b0'])
+    D2_300 = D2.put(C2_300.pin['b1'],flip=True)
+    srt2_300 = srt.put(C2_300.pin['b0'])
+    C3_300 = C8.put(srt2_300.pin['b0'])
+    D3_300 = D3.put(C3_300.pin['b1'],flip=True)
+    srt3_300 = srt.put(C3_300.pin['b0'])
+    C4_300 = C10.put(srt3_300.pin['b0'])
+    #######################################################################################
 
+    ##########4 channel(5nm)- 4 coupler stages 300nm gap ##############################
+    u1 = nd.sinebend(width=width, distance=150, offset=sep, xs='x')
+    u2 = nd.sinebend(width=width, distance=150, offset=-sep, xs='x')
 
+    C1_250 = C6.put(4*x,-3*y+c)
+    D1_250 = D1.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C8.put(D1_250.pin['b0'])
+    D2_250 = D2.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C8.put(srt2_250.pin['b0'])
+    D3_250 = D3.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C10.put(srt3_250.pin['b0'])
 
+    #connections
+    bend2 = u1.put(C4_250.pin["b0"])
+    bend1 = u2.put(C4_250.pin["b1"])
 
+    #lower stage
+    C1_250 = C6.put("a0",bend1.pin["b0"])
+    D1_250 = D4.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C8.put(D1_250.pin['b0'])
+    D2_250 = D5.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C8.put(srt2_250.pin['b0'])
+    D3_250 = D6.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C10.put(srt3_250.pin['b0'])
+
+    #upper stage
+    C1_250 = C6.put("a0",bend2.pin["b0"])
+    D1_250 = D7.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C8.put(D1_250.pin['b0'])
+    D2_250 = D8.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C8.put(srt2_250.pin['b0'])
+    D3_250 = D9.put(C3_250.pin['b1'],flip=True)
+    srt3_250 = srt.put(C3_250.pin['b0'])
+    C4_250 = C10.put(srt3_250.pin['b0'])
+    ################################################################
+
+    ##########4 channel(5nm)- 3 coupler stages 300nm gap ##############################
+    u1 = nd.sinebend(width=width, distance=150, offset=sep, xs='x')
+    u2 = nd.sinebend(width=width, distance=150, offset=-sep, xs='x')
+    C1_250 = C6.put(4*x,-4*y+c)
+    D1_250 = D1.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C7.put(D1_250.pin['b0'])
+    D2_250 = D2.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C9.put(srt2_250.pin['b0'])
+    bend1 = u1.put(C3_250.pin["b0"])
+    bend2 = u2.put(C3_250.pin["b1"])
+
+    #lower stage
+    C1_250 = C6.put("a0",bend1.pin["b0"])
+    D1_250 = D4.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C7.put(D1_250.pin['b0'])
+    D2_250 = D5.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C9.put(srt2_250.pin['b0'])
+
+    #upper stage
+    C1_250 = C6.put("a0",bend2.pin["b0"])
+    D1_250 = D7.put(C1_250.pin['b0'])
+    srt1_250 = srt.put(C1_250.pin['b1'])
+    C2_250 = C7.put(D1_250.pin['b0'])
+    D2_250 = D8.put(C2_250.pin['b1'],flip=True)
+    srt2_250 = srt.put(C2_250.pin['b0'])
+    C3_250 = C9.put(srt2_250.pin['b0'])
+    ################################################################
+    c=6000
 
 nd.export_gds(filename="./src/GDS_Generator/Si-Run2.gds")
