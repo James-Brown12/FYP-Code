@@ -3,7 +3,7 @@ from scipy.signal import remez,freqz
 import matplotlib.pyplot as plt
 
 class FIRFilter:
-    def __init__(self, order:int,filter_type:str, t_width:float, endpoints):
+    def __init__(self, order:int,filter_type:str, t_width:float,center:float, range:float):
 
         """
         Parameters: order: Order of the desired filter
@@ -16,64 +16,73 @@ class FIRFilter:
         self.order = order
         self.t_width = t_width
         self.filter_type = filter_type
-        self.fstart, self.fend = endpoints[0], endpoints[1]
+        self.center, self.range = center,range
 
     def normalized_frequency(self, f):
-        return (f - self.fstart) / (2 * (self.fend - self.fstart))
+        return (f - (self.center - self.range/2)) / (2*(self.range))
 
-    def obtain_bands(self, center_frequencies, band_width:float,cutoff_frequency:float=None):
+    def design_fir_filter(self, band_center, band_width, cutoff_frequency=None, plot=False):
         """
-        Function to obtain the bands(pass or stop), in units of normalized frequency, from
-        the center Frequencies
-    
-        Parameters: center_frequencies: ndarray of center Frequencies, lowest frequency is in position 0 of array
-                    band_width: desired width of pass (or stop) band, in Hz
-                    endpoints: endpoints of Frequency of interest.
-                    filter_type: string that indicates type of filter: ["Bandpass" ,"BandStop","Lowpass","Highpass"]
-                                    
-        Return: List of tuples representing band (normalized) frequency intervals
+        Function to design an FIR filter using Parks-McClellan algorithm (Remez method) based on user input.
+
+        Parameters:
+            center_freq: Center frequency or array of center frequencies.
+            band_width: Desired width of pass (or stop) band, in Hz.
+            cutoff_frequency: Cutoff frequency for high and low pass filter.
+            plot: Boolean indicating whether to plot the frequency response.
+
+        Returns:
+            FIR filter coefficients.
         """
-        
         bands = []
-
-        if self.filter_type == "Lowpass":
-            bands.append((0.0, self.normalized_frequency(cutoff_frequency), 1.0))
-        elif self.filter_type == "Highpass":
-            bands.append((self.normalized_frequency(cutoff_frequency), 0.5, 1.0))
+        desired = []
+        
+        if self.filter_type == "Lowpass" or self.filter_type == "Highpass":
+            bands.extend([0.0, self.normalized_frequency(cutoff_frequency - self.t_width/2),self.normalized_frequency(cutoff_frequency + self.t_width/2), 0.5])
+            if self.filter_type == "Lowpass":
+                desired.extend([1.0, 0.0])
+            else:
+                desired.extend([0.0, 1.0])
+        
         else:
-            for frequency in center_frequencies:
+            for frequency in band_center:
                 f_low, f_up = frequency - band_width / 2.0, frequency + band_width / 2.0
-                bands.append((self.normalized_frequency(f_low), self.normalized_frequency(f_up), 1.0 if self.filter_type == "Bandpass" else 0.0))
+                bands.extend(filter(lambda x: 0.0 < x < 0.5, [self.normalized_frequency(f_low - self.t_width/2), 
+                                                              self.normalized_frequency(f_low), 
+                                                              self.normalized_frequency(f_up), 
+                                                              self.normalized_frequency(f_up + self.t_width/2)]))
+               
+                if self.normalized_frequency(f_up + self.t_width / 2) > 0.5:
+                    desired.append(0.0 if self.filter_type == "Bandpass" else 1.0)
+
+                elif self.normalized_frequency(f_low - self.t_width / 2) < 0.0:
+                    desired.append(0.0 if self.filter_type == "Bandpass" else 1.0)
+
+                else:
+                    desired.extend([0.0, 1.0] if self.filter_type == "Bandpass" else [1.0, 0.0])
                 
-        return bands
-
-    def fir_filter_parks_mcclellan(self, bands, plot=False):
-        freq, gain = [], []
-
-        for band in bands:
-            start_freq, end_freq, band_gain = band
-            t_width = self.normalized_frequency(self.t_width)
-
-            freq.extend(filter(lambda x: 0.0 < x < 0.5, [start_freq - t_width, start_freq, end_freq, end_freq + t_width]))
-            gain.extend([band_gain])
-            if self.filter_type !="Highpass":
-                gain.extend([0.0 if self.filter_type in {"Bandpass", "Lowpass"} else 1.0])
-
-
-        freq = [0.0] + freq + [0.5]
-        if self.filter_type !="Lowpass":
-            gain = [0.0 if self.filter_type in {"Bandpass", "Highpass"} else 1.0] + gain
-        coefs = remez(numtaps=self.order, bands=freq, desired=gain)
-
-        if plot == True:
-            w, h = freqz(coefs, [1], worN=2000,fs=1)
-            plot_response(w,h,"Plot of FIR Transfer Function")
-
+                
+                
+            bands = [0.0] + bands + [0.5]
+            if self.filter_type == "Bandpass":
+                    desired.extend([0.0])
+            else:
+                    desired.extend([1.0])
+          
+        print("Bands:",np.sort(bands),len(bands))
+        print("Desired:", desired,len(desired))
+        
+        coefs = remez(numtaps=self.order, bands=np.sort(bands), desired=desired)
+        
+        if plot:
+            w, h = freqz(coefs, [1], worN=2000, fs=1)
+            plot_response(w, h, "Plot of FIR Transfer Function")
+        
         return coefs
 
 
 
-def plot_response(w, h, title):
+def plot_response(w, h, title): 
     "Utility function to plot response functions"
     fig, ax = plt.subplots()
     ax.plot(w, 20 * np.log10(np.abs(h)))
@@ -84,17 +93,19 @@ def plot_response(w, h, title):
 
 def example_usage():
     for filter_type in ['Bandstop','Bandpass','Highpass','Lowpass']:
-        filter_instance = FIRFilter(order=100, t_width=10, filter_type=filter_type,endpoints = (0, 500))
-        center_frequencies = np.array([100.0])   
-        band_width = 100
-        cutoff_frequency=100
+        filter_instance = FIRFilter(order=61, t_width=2.5, filter_type=filter_type,center=190, range=50)
+        
+        
+        band_center = np.array([200])   
+        band_width = 5
+        cutoff_frequency=190
 
-        bands = filter_instance.obtain_bands(center_frequencies, band_width,cutoff_frequency)
-        coefs= filter_instance.fir_filter_parks_mcclellan(bands)
+        
+        coefs= filter_instance.design_fir_filter(band_center, band_width, cutoff_frequency, plot=False)
         
         # Plot the frequency response
         w, h = freqz(coefs, [1], worN=2000,fs=1)
-        plot_response(w,h,"multiband")
+        plot_response(w,h,f"multiband_{filter_type}")
    
 if __name__ == "__main__":
     example_usage()

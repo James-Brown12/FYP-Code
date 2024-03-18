@@ -117,8 +117,7 @@ def FindCoefficents(A):
 if __name__ == "__main__":
     # Example usage
     #Let A be the coeffents of the desired transfer function
-    A = [-0.00369,-0.02777,-0.06446,-0.07708,-0.11144, -0.00643,-0.02560,0.25958,0.00000,0.35648,-0.67658,-0.10130,0.31968, 0.00574,0.00425,0.03567,0.01571,0.01284,-0.00428,-0.00647,-0.00813,-0.00482,0.00397,0.00298]
-    #A =[-0.250,0.433,-0.250]
+    A =[-0.250,0.5,-0.250]
     #calculate coefficents
     kappa,phi,theta = FindCoefficents(A)
 
