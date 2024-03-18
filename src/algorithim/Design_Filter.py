@@ -38,7 +38,7 @@ class FIRFilter:
         desired = []
         
         if self.filter_type == "Lowpass" or self.filter_type == "Highpass":
-            bands.extend([0.0, self.normalized_frequency(cutoff_frequency - self.t_width/2),self.normalized_frequency(cutoff_frequency + self.t_width/2), 0.5])
+            bands.extend([0.0, self.normalized_frequency(cutoff_frequency - self.t_width),self.normalized_frequency(cutoff_frequency + self.t_width), 0.5])
             if self.filter_type == "Lowpass":
                 desired.extend([1.0, 0.0])
             else:
@@ -47,15 +47,15 @@ class FIRFilter:
         else:
             for frequency in band_center:
                 f_low, f_up = frequency - band_width / 2.0, frequency + band_width / 2.0
-                bands.extend(filter(lambda x: 0.0 < x < 0.5, [self.normalized_frequency(f_low - self.t_width/2), 
+                bands.extend(filter(lambda x: 0.0 < x < 0.5, [self.normalized_frequency(f_low - self.t_width), 
                                                               self.normalized_frequency(f_low), 
                                                               self.normalized_frequency(f_up), 
-                                                              self.normalized_frequency(f_up + self.t_width/2)]))
+                                                              self.normalized_frequency(f_up + self.t_width)]))
                
-                if self.normalized_frequency(f_up + self.t_width / 2) > 0.5:
+                if self.normalized_frequency(f_up + self.t_width ) > 0.5:
                     desired.append(0.0 if self.filter_type == "Bandpass" else 1.0)
 
-                elif self.normalized_frequency(f_low - self.t_width / 2) < 0.0:
+                elif self.normalized_frequency(f_low - self.t_width ) < 0.0:
                     desired.append(0.0 if self.filter_type == "Bandpass" else 1.0)
 
                 else:
@@ -69,8 +69,6 @@ class FIRFilter:
             else:
                     desired.extend([1.0])
           
-        print("Bands:",np.sort(bands),len(bands))
-        print("Desired:", desired,len(desired))
         
         coefs = remez(numtaps=self.order, bands=np.sort(bands), desired=desired)
         

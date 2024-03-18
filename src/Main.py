@@ -71,14 +71,14 @@ def FindOpticalParameters():
             "Initialise Digital filter":{
             "filter_order": 15,         # Max order of the FIR filter/ number of couplers optical filter
             "filter_type": "Bandpass",  # "Lowpass","Highpass","Bandpass", "Bandstop"
-            "t_width":5,                # Transition width between stop and pass band (THz)
+            "t_width":5.0,                # Transition width between stop and pass band (THz)
             "center_frequency": 193.5,  # Center Frequency for range (THz)  
-            "range": 20,                # The frequency range of interest (THz)
+            "range": 50,                # The frequency range of interest (THz)
             },
 
             "Frequency parameters":{
             "band_centers": [193.5],  # list of center frequncies for bands(THz)
-            "band_width": 5,          # Band width of the bands (THz)
+            "band_width": 15,          # Band width of the bands (THz)
             "cutoff_frequency": None,  # cutoff frequncy for high and lowpass filters
             }
         }
@@ -89,13 +89,13 @@ def FindOpticalParameters():
     
     #Design Fir filter using park McClellan method for parameters above implemented in Design_filter.py
     filter_instance = df.FIRFilter(order = filter.get("filter_order"), filter_type = filter.get("filter_type"), t_width = filter.get("t_width"), center = filter.get("center_frequency"), range = filter.get("range"))
-    A = df.design_fir_filter(band_center = frequency.get("band_centers"), band_width = frequency.get("band_width") , cutoff_frequency= frequency.get("cutoff_frequency"), plot=True)
+    A = filter_instance.design_fir_filter(band_center = frequency.get("band_centers"), band_width = frequency.get("band_width") , cutoff_frequency= frequency.get("cutoff_frequency"), plot=True)
   
     #Find the correct optical parameters for the found transfer fuction A implemented in FIR_Algorithim.py
-    kappa,phi = fir.FindCoefficents(A=A)
+    kappa,phi,theta = fir.FindCoefficents(A=A)
     
-    return kappa, phi
+    return kappa, phi,theta
 
 if __name__ == "__main__":
-    kappa, phi = FindOpticalParameters()
+    kappa, phi,theta = FindOpticalParameters()
     print(kappa,phi)
