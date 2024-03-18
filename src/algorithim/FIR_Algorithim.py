@@ -93,7 +93,7 @@ def FindCoefficents(A):
 
         if n > 0:
             # Step-down recursion relation operations Eq) 61/62
-            B_N1 =  (B_N * c_n - A_N * s_n )
+            B_N1 =  (B_N * c_n - A_N * s_n )[1:]
             #print(B_N1[0])
             A_N1_tild = c_n * A_N + s_n * B_N
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     #calculate coefficents
     kappa,phi,theta = FindCoefficents(A)
 
-    print(kappa)
+    print(kappa,np.array(phi)/np.pi)
 
 """
 Result:
