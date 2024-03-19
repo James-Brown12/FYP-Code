@@ -69,16 +69,16 @@ def FindOpticalParameters():
     params = {
             
             "Initialise Digital filter":{
-            "filter_order": 15,         # Max order of the FIR filter/ number of couplers optical filter
+            "filter_order": 20,         # Max order of the FIR filter/ number of couplers optical filter
             "filter_type": "Bandpass",  # "Lowpass","Highpass","Bandpass", "Bandstop"
-            "t_width":5.0,                # Transition width between stop and pass band (THz)
+            "t_width":10.0,                # Transition width between stop and pass band (THz)
             "center_frequency": 193.5,  # Center Frequency for range (THz)  
-            "range": 50,                # The frequency range of interest (THz)
+            "range": 100,                # The frequency range of interest (THz)
             },
 
             "Frequency parameters":{
             "band_centers": [193.5],  # list of center frequncies for bands(THz)
-            "band_width": 15,          # Band width of the bands (THz)
+            "band_width": 30,          # Band width of the bands (THz)
             "cutoff_frequency": None,  # cutoff frequncy for high and lowpass filters
             }
         }
