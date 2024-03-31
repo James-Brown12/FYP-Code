@@ -7,9 +7,10 @@ class FIRFilter:
 
         """
         Parameters: Order: Order of the desired filter
-                    Bands: Transition width between pass and stopband Note: t_width ~ 1/order
-                    Desired: endpoints of Frequency of interest.
-                    Weights: 
+                    Bands: List of band edges in the form (band1_start,band1_stop,band2_start,band2_stop, ...)
+                    Desired: desired gain for each band: this should be half the size of bands
+                    Weights: The weight represent how important is the band relative to the others.   
+                             Usually, zero-gain bands are given higher weights to obtain the maximum possible attenuation.
         """
 
         self.order = order
@@ -23,6 +24,9 @@ class FIRFilter:
 
         self.bands = bands
         self.desired = desired
+        if len(self.bands) != 2*len(self.desired):
+            raise ValueError("Desired must be half the length of Bands array")
+
         self.weights = weights
         self.fs = 2*np.max(bands)
         
@@ -33,13 +37,6 @@ class FIRFilter:
     def design_fir_filter(self, plot=False):
         """
         Function to design an FIR filter using Parks-McClellan algorithm (Remez method) based on user input.
-
-        Parameters:
-            center_freq: Center frequency or array of center frequencies.
-            band_width: Desired width of pass (or stop) band, in Hz.
-            cutoff_frequency: Cutoff frequency for high and low pass filter.
-            plot: Boolean indicating whether to plot the frequency response.
-
         Returns:
             FIR filter coefficients.
         """
@@ -50,10 +47,9 @@ class FIRFilter:
         
         self.desired = np.asarray(self.desired).flatten()
         
-        if self.weights is None:
-            self.weights = np.ones(len(self.desired))
-        self.weights = np.asarray(self.weights).flatten()
-
+        if self.weights is not None:
+            self.weights = np.asarray(self.weights).flatten()
+   
         # Use scipy.signal.remez to design the filter
         coeffs = remez(numtaps=self.order, bands=self.bands, desired=self.desired, weight=self.weights,fs=self.fs)
         
@@ -73,6 +69,7 @@ class FIRFilter:
         plt.show()
 
     def SaveCoeffs(self, path):
+        "Utility function to save coeffcients as csv file"
         if not self.computedCoeffs:
             self.Impulse()
         fileName = f"{path}/coefficients.csv"
