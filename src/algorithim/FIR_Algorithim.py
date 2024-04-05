@@ -76,21 +76,18 @@ def FindCoefficents(A):
     A_N = np.array(A)
     phi_values = []  # List of phi_ns
     kappa_values = []  # List of kappass
-    theta_values =[] #list of coupling angles
     n = len(A_N)-1
 
     while n >= 0:
         # Calculate kappa Eq) 60
         ratio = np.abs(B_N[0] / A_N[0])**2
         kappa_n = ratio / (1.0 + ratio)
-        coupling_angle = np.arctan(B_N[0] / A_N[0])
-
+        
         #def of cos and sin from coupling power ratio
         c_n = np.sqrt(1.0-kappa_n)
         s_n = np.sqrt(kappa_n)
         kappa_values.append(kappa_n)
-        theta_values.append(coupling_angle)
-
+        
         if n > 0:
             # Step-down recursion relation operations Eq) 61/62
             B_N1 =  (B_N * c_n - A_N * s_n )[1:]
@@ -112,7 +109,7 @@ def FindCoefficents(A):
         A_N = A_N1
         B_N = B_N1
 
-    return kappa_values, phi_values,theta_values
+    return kappa_values, phi_values
 
 
 if __name__ == "__main__":

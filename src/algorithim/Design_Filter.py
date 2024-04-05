@@ -51,7 +51,7 @@ class FIRFilter:
             self.weights = np.asarray(self.weights).flatten()
    
         # Use scipy.signal.remez to design the filter
-        coeffs = remez(numtaps=self.order, bands=self.bands, desired=self.desired, weight=self.weights,fs=self.fs)
+        coeffs = remez(numtaps=self.order, bands=self.bands, desired=self.desired, weight=self.weights,fs=self.fs, grid_density=32)
         
         if plot:
             w, h = freqz(coeffs, [1], worN=2000, fs=1)
@@ -77,7 +77,6 @@ class FIRFilter:
 
 
 if __name__ == "__main__":
-    Fs = 1440
     Length = 50
     band_edges = [0, 500, 505, 720]
     desired_gain = [1, 0]
