@@ -26,14 +26,22 @@ class FIRFilter:
         self.desired = desired
         if len(self.bands) != 2*len(self.desired):
             raise ValueError("Desired must be half the length of Bands array")
-
         self.weights = weights
-        self.fs = 2*np.max(bands)
+        self.min = np.min(self.bands)
+        self.range = np.max(self.bands)- np.min(self.bands)
         
         # Flag to check if coefficients have been computed
         self.computedCoeffs = False
         self.coeffs = None
 
+    def Normalise(self,Bands):
+        Band =[]
+        for band in Bands:
+            norm = ((band - self.min ) / (self.range)) *0.5
+            Band.append(norm)
+        Bands = Band
+        return Bands
+    
     def design_fir_filter(self, plot=False):
         """
         Function to design an FIR filter using Parks-McClellan algorithm (Remez method) based on user input.
@@ -43,18 +51,18 @@ class FIRFilter:
         if self.computedCoeffs:
             return self.coeffs
 
-        self.bands = np.asarray(self.bands).flatten()
-        
+        self.bands = np.asarray(self.Normalise(self.bands)).flatten()
         self.desired = np.asarray(self.desired).flatten()
         
         if self.weights is not None:
             self.weights = np.asarray(self.weights).flatten()
    
         # Use scipy.signal.remez to design the filter
-        coeffs = remez(numtaps=self.order, bands=self.bands, desired=self.desired, weight=self.weights,fs=self.fs, grid_density=32)
+        coeffs = remez(numtaps=self.order, bands=self.bands, desired=self.desired, weight=self.weights,fs=1, grid_density=128)
         
         if plot:
             w, h = freqz(coeffs, [1], worN=2000, fs=1)
+            w= 2*w*self.range + self.min
             self.plot_response(w, h, "Plot of FIR Transfer Function")
         
         return coeffs

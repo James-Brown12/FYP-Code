@@ -40,14 +40,14 @@ def FindB(A):
     Return:      B: coefficient array of polynomial in z^-1 of degree N B_N(z)
     """
     A = np.array(A)
-    # Eq) 66 letting e^(-j*phi_tot) = 1
+    # letting e^(-j*phi_tot) = 1
     BB_R = -1.0 * np.polymul(A, np.flip(A)) # -A_N(Z)A_RN(z)
     BB_R[A.size-1] += 1.0  # add 1 to z^-N term, where N is order of A
 
     #Find roots of B_N(z)B_NR(z)
     roots = np.array(np.poly1d(BB_R).roots )
     
-    #Spectral factorization taking the minimum phase roots Eq) 67
+    #Spectral factorization taking the minimum phase roots Eq
     min_roots = spectralFactorization(roots, roots.size/2)
     
     #Build unscaled B from roots
@@ -60,17 +60,13 @@ def FindB(A):
 
 
 def FindCoefficents(A):
-
-
     """
     Find coefficents kappa and phi from the z-transform coeffiecients of FIR filter designed using Digtal signal processing methods (Madsen and Zhao Ch 4.5)
     
     Parameters:  A: Coefficient array of polynomial in z^-1 of degree N in form [z^-N, z^-(N-1, ... z^-1, z^0]
-                 
-             
+                        
     Return:     kappa_values: List of power coupling coefficients kappa_n's (k_n, k_n-1, ... k_0)
-                phi_values:   List of phase terms phi_n (phi_n,phi_n-1,...phi_0)
-                
+                phi_values:   List of phase terms phi_n (phi_n,phi_n-1,...phi_0)             
     """
     B_N = np.array(FindB(A))
     A_N = np.array(A)
@@ -104,11 +100,9 @@ def FindCoefficents(A):
             # Ensure real coefficients
             A_N1 = np.real(A_N1)
             B_N1 = np.real(B_N1)
-
         n -= 1
         A_N = A_N1
         B_N = B_N1
-
     return kappa_values, phi_values
 
 

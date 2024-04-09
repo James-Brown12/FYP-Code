@@ -5,24 +5,26 @@ import numpy as np
 
 
 ######################## USER PARAMTERS ########################################
-Order = 15
-band_edges = [0, 0.1,0.15,0.35,0.4,0.5] #Normailsed between [0-0.5] must occur in pairs
-desired_gain = [0,1, 0]
-n_g= 8.05894 #group index
-center_frequncy = 1550
-FSR = 20
-# Note code will take the range of Band_enges as FSR and Median as the central wavelength
-#################################################################################
+Order = 20
+band_edges = [1400, 1500,1510,1590,1600,1700] #The start a sndtop wavelengths for band must occur in pairs, the central freuqncy and FSR are taken from this also.
+desired_gain = [0,1, 0] # The gain in each band given in Desired_bands
+#Find Length
+n_g = 4.40063 #group index
+###################################################################################
 
 def FindOpticalParameters():
+
     Filter = df.FIRFilter(Order, band_edges, desired_gain)
     A = Filter.design_fir_filter(plot=True)
     #Find the correct optical parameters for the found transfer fuction A implemented in FIR_Algorithim.py
     kappa,phi = fir.FindCoefficents(A=A)
+    center_frequncy = (np.max(band_edges) + np.min(band_edges)) / 2
+    range = np.max(band_edges) - np.min(band_edges)
+    DeltaL = ((center_frequncy)**2 /(n_g*range) ) *1E-3 # Delta L in microns
 
-    DeltaL = (np.median(band_edges)**2 / n_g*np.ptp(band_edges)) * 1E-9 #put into meters
-    return DeltaL,kappa, phi
+    return DeltaL,kappa
 
 if __name__ == "__main__":
-    DeltaL, kappa, phi = FindOpticalParameters()
-    print(DeltaL,kappa,phi)
+    DeltaL, kappa = FindOpticalParameters()
+    print(DeltaL,kappa)
+
